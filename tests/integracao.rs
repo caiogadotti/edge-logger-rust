@@ -144,7 +144,11 @@ fn queda_de_energia() {
 fn entrada_mqtt() {
     use rumqttc::{Client, MqttOptions, QoS};
     assert!(
-        std::net::TcpStream::connect_timeout(&"127.0.0.1:1883".parse().unwrap(), Duration::from_secs(2)).is_ok(),
+        std::net::TcpStream::connect_timeout(
+            &"127.0.0.1:1883".parse().unwrap(),
+            Duration::from_secs(2)
+        )
+        .is_ok(),
         "sem broker MQTT em localhost:1883"
     );
     let dir = tempfile::tempdir().unwrap();

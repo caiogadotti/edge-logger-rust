@@ -24,13 +24,10 @@ jobs:
 
   mqtt:
     runs-on: ubuntu-latest
-    services:
-      mosquitto:
-        image: eclipse-mosquitto:2
-        ports: ["1883:1883"]
-        options: --entrypoint "mosquitto -c /mosquitto-no-auth.conf"
     steps:
       - uses: actions/checkout@v4
+      # service container não aceita comando, então o broker sobe num passo normal
+      - run: docker run -d -p 1883:1883 eclipse-mosquitto:2 mosquitto -c /mosquitto-no-auth.conf
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --release -- --ignored entrada_mqtt
