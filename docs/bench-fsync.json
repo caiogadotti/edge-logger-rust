@@ -1,0 +1,12 @@
+{
+  "leituras": 5000000,
+  "segundos": 0.947902,
+  "leituras_por_s": 5274806.889319782,
+  "mb_por_s_entrada": 94.94652400775607,
+  "bytes_disco": 13539215,
+  "bytes_csv": 130254032,
+  "bytes_crus": 90000000,
+  "compressao_vs_csv": 9.620501040865367,
+  "compressao_vs_cru": 6.647357324630711,
+  "fsync": true
+}

@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --release
+
+  mqtt:
+    runs-on: ubuntu-latest
+    services:
+      mosquitto:
+        image: eclipse-mosquitto:2
+        ports: ["1883:1883"]
+        options: --entrypoint "mosquitto -c /mosquitto-no-auth.conf"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --release -- --ignored entrada_mqtt
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - { target: x86_64-pc-windows-msvc, os: windows-latest, bin: edgelog.exe }
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-latest, bin: edgelog }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-latest, bin: edgelog, cross: true }
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - if: matrix.cross
+        run: cargo install cross --locked
+      - run: ${{ matrix.cross && 'cross' || 'cargo' }} build --release --target ${{ matrix.target }}
+      - shell: bash
+        run: |
+          mkdir dist
+          cp target/${{ matrix.target }}/release/${{ matrix.bin }} dist/
+          cd dist && tar czf ../edgelog-${{ matrix.target }}.tar.gz *
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: edgelog-${{ matrix.target }}.tar.gz
